@@ -7,9 +7,15 @@ import SwiftUI
 import SwiftData
 
 struct HabitMatrixView: View {
+    @Environment(\.modelContext) private var context
+
     @Query(filter: #Predicate<Habit> { $0.isArchived == false },
            sort: \Habit.createdAt, order: .reverse)
     private var habits: [Habit]
+
+    @Query(filter: #Predicate<Habit> { $0.isArchived == true },
+           sort: \Habit.createdAt, order: .reverse)
+    private var archivedHabits: [Habit]
 
     @State private var showingAdd = false
 
@@ -110,6 +116,46 @@ struct HabitMatrixView: View {
 
             if habits.isEmpty {
                 emptyState
+            }
+
+            if !archivedHabits.isEmpty {
+                archivedSection
+            }
+        }
+    }
+
+    private var archivedSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "archivebox")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("보관된 습관")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                Text("\(archivedHabits.count)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            ForEach(archivedHabits) { habit in
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(Color(.tertiarySystemFill))
+                        .frame(width: 8, height: 8)
+                    Text(habit.name)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("복원") {
+                        habit.isArchived = false
+                        try? context.save()
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                }
+                .padding(10)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
     }
